@@ -1,0 +1,8 @@
+torch
+torchaudio
+transformers
+speechrecognition
+sentence-transformers
+keyboard
+pydub
+fuzzywuzzy[speedup]
