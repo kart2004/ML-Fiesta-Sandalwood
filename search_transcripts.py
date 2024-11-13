@@ -1,15 +1,16 @@
 import os
-from sentence_transformers import SentenceTransformer
+import torchaudio
+from sentence_transformers import SentenceTransformer, util
 from sklearn.metrics.pairwise import cosine_similarity
 
-# Step 1: Load the user's question from 'recordedaudio.txt'
+# Step 1: Load the user's question from 'recorded_audio.txt'
 def load_user_question(file_path="newtranscripts/recorded_audio.txt"):
     with open(file_path, "r", encoding="utf-8") as file:
         question = file.read().strip()
     return question
 
 # Step 2: Load all transcript files from the transcripts directory
-def load_transcripts(transcripts_dir="newstuff"):
+def load_transcripts(transcripts_dir="Transcripts"):
     transcripts = []
     files = os.listdir(transcripts_dir)
     for file in files:
@@ -46,13 +47,23 @@ def find_best_match(question, transcripts, model):
     # Return the file name and content of the best matching transcript
     return transcripts[best_match_idx]
 
-# Step 5: Main function to run the pipeline
+# Step 5: Get the audio segment corresponding to the best match
+def get_audio_segment(transcript_file, start_time, segment_duration, audio_dir):
+    audio_file = os.path.splitext(transcript_file)[0] + ".wav"
+    audio_path = os.path.join(audio_dir, audio_file)
+    speech_array, sampling_rate = torchaudio.load(audio_path)
+    start_sample = int(start_time * sampling_rate)
+    end_sample = int((start_time + segment_duration) * sampling_rate)
+    answer_segment = speech_array[:, start_sample:end_sample]
+    return answer_segment, sampling_rate
+
+# Step 6: Main function to run the pipeline
 def qa_pipeline():
     # Load the user's question
     question = load_user_question("newtranscripts/recorded_audio.txt")
 
     # Load transcripts from the directory
-    transcripts = load_transcripts("newstuff")
+    transcripts = load_transcripts("Transcripts")
 
     # Load the pre-trained Sentence-Transformer model (mBERT or XLM-R)
     model = SentenceTransformer('distilbert-base-nli-stsb-mean-tokens')
@@ -64,6 +75,9 @@ def qa_pipeline():
     print(f"Best matching transcript found in file: {best_match_file}")
     print(f"Answer: {best_match_transcript}")
 
+    # Ensure the answers directory exists
+    os.makedirs("answers", exist_ok=True)
+
     # Save the answer to a file
     output_file = "answers/answer.txt"
     with open(output_file, "w", encoding="utf-8") as f:
@@ -72,6 +86,15 @@ def qa_pipeline():
         f.write(f"Answer: {best_match_transcript}\n")
 
     print(f"Answer has been saved to {output_file}")
+
+    # Save the corresponding audio segment
+    start_time = float(best_match_transcript.split("[")[1].split("s]")[0])
+    segment_duration = 30  # Adjust as needed
+    audio_dir = "Dataset-wav"
+    answer_segment, sampling_rate = get_audio_segment(best_match_file, start_time, segment_duration, audio_dir)
+    answer_audio_path = "answers/answer_segment.wav"
+    torchaudio.save(answer_audio_path, answer_segment, sampling_rate)
+    print(f"Answer audio segment saved as {answer_audio_path}")
 
 # Run the QA pipeline
 qa_pipeline()
