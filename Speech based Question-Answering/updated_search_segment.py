@@ -6,6 +6,9 @@ import numpy as np
 
 # Path to the folder containing transcripts
 transcripts_folder = 'transcripts3'
+def load_question_from_file(question_file):
+    with open(question_file, 'r', encoding='utf-8') as file:
+        return file.read().strip()  # Read the question and remove extra spaces/newlines
 
 # Load a pre-trained multilingual model
 tokenizer = BertTokenizer.from_pretrained('bert-base-multilingual-cased')
@@ -53,7 +56,7 @@ index = faiss.IndexFlatL2(embedding_matrix.shape[1])  # L2 distance (Euclidean)
 index.add(embedding_matrix)
 
 # Save the FAISS index to a file (optional, for persistent storage)
-faiss.write_index(index, "transcript_index2.faiss")
+faiss.write_index(index, "transcript_in.faiss")
 
 # Function to vectorize and search for the answer to a Kannada question
 def get_answer_from_transcripts(question):
@@ -70,7 +73,7 @@ def get_answer_from_transcripts(question):
     query_vector = np.array(question_embedding).astype(np.float32).reshape(1, -1)
     
     # Perform search for the top 3 most relevant segments
-    k = 2
+    k = 1
     distances, indices = index.search(query_vector, k)
     
     # Return the top 3 closest transcript segments
@@ -81,11 +84,21 @@ def get_answer_from_transcripts(question):
     return answers
 
 # Example usage
-question = "ಭಾರತದ ಯಾವ ರಾಜ್ಯದಲ್ಲಿ ಬಿರಿಯಾನಿ ವಿಶಿಷ್ಟ ರುಚಿಯೊಂದಿಗೆ ಪ್ರಪಂಚ ಪ್ರಸಿದ್ಧವಾಗಿದೆ?"
+# Function to save answers to a text file
+def save_answers_to_file(answers, output_file):
+    with open(output_file, 'w', encoding='utf-8') as file:
+        for answer in answers:
+            file.write(answer + '\n\n')  # Separate answers with a blank line
 
+# Example usage
+question_file = "recorded_audio.txt"
+question = load_question_from_file(question_file)
 # Kannada question
 answers = get_answer_from_transcripts(question)
 
-# Display the most relevant answers
-for answer in answers:
-    print(answer)
+# Save the answers to a text file
+output_file = "answers/ans.txt"
+save_answers_to_file(answers, output_file)
+
+print(f"Answers saved to {output_file}")
+
