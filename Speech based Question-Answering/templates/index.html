@@ -13,6 +13,10 @@
         <input type="number" id="duration" name="duration" value="10" min="1" max="60">
         <button type="submit">Record</button>
     </form>
+    {% if transcription %}
+    <h2>Transcription:</h2>
+    <pre>{{ transcription }}</pre>
+    {% endif %}
     <script src="{{ url_for('static', filename='scripts.js') }}"></script>
 </body>
 </html>
