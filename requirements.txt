@@ -6,3 +6,8 @@ sentence-transformers
 keyboard
 pydub
 fuzzywuzzy[speedup]
+nltk
+faiss-cpu
+inltk
+astai==1.0.57
+inltk sentence-transformers torch faiss-cpu scikit-learn torchaudio

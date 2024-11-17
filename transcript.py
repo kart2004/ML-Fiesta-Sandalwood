@@ -1,6 +1,8 @@
 import torch
 import librosa
+import numpy as np
 from transformers import Wav2Vec2ForCTC, Wav2Vec2Processor
+import noisereduce as nr
 import os
 
 # Load model and processor
@@ -10,10 +12,10 @@ model = Wav2Vec2ForCTC.from_pretrained("amoghsgopadi/wav2vec2-large-xlsr-kn")
 print("Model and processor loaded.")
 
 # Directory containing WAV files
-wav_dir = os.path.expanduser("ML-Fiesta-Sandalwood/Dataset-wav")
+wav_dir = os.path.expanduser("Dataset-wav") 
 
 # Directory to save transcripts
-transcripts_dir = os.path.expanduser("ML-Fiesta-Sandalwood/Transcripts")
+transcripts_dir = os.path.expanduser("Transcripts")
 os.makedirs(transcripts_dir, exist_ok=True)
 print(f"Transcripts will be saved to: {transcripts_dir}")
 
@@ -23,6 +25,19 @@ batch_size = 4  # Number of segments to process in a batch
 
 # Define max_length for truncation
 max_length = segment_duration * 16000  # Assuming 16 kHz sampling rate
+
+# Apply noise reduction
+def reduce_noise(audio, sampling_rate):
+    reduced_noise_audio = nr.reduce_noise(y=audio, sr=sampling_rate)
+    return reduced_noise_audio
+
+# Detect and remove silent segments
+def remove_silence(audio, sampling_rate, top_db=20):
+    non_silent_intervals = librosa.effects.split(audio, top_db=top_db)
+    non_silent_audio = []
+    for start, end in non_silent_intervals:
+        non_silent_audio.extend(audio[start:end])
+    return np.array(non_silent_audio)
 
 # Generate transcripts
 for wav_file in os.listdir(wav_dir):
@@ -36,6 +51,12 @@ for wav_file in os.listdir(wav_dir):
         except Exception as e:
             print(f"Error loading audio file {wav_file}: {e}")
             continue
+
+        # Apply noise reduction
+        speech_array = reduce_noise(speech_array, sampling_rate)
+
+        # Remove silence
+        speech_array = remove_silence(speech_array, sampling_rate)
 
         # Total length of audio in seconds
         total_duration = len(speech_array) / sampling_rate
