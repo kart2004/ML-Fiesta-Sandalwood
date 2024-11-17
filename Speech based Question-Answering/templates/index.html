@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kannada Audio Recorder</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <h1>Kannada Audio Recorder</h1>
+    <form action="{{ url_for('record') }}" method="post">
+        <label for="duration">Duration (seconds):</label>
+        <input type="number" id="duration" name="duration" value="10" min="1" max="60">
+        <button type="submit">Record</button>
+    </form>
+    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+</body>
+</html>

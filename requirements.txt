@@ -11,3 +11,4 @@ faiss-cpu
 inltk
 astai==1.0.57
 inltk sentence-transformers torch faiss-cpu scikit-learn torchaudio
+SpeechRecognition

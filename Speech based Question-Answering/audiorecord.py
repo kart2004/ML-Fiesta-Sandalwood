@@ -19,6 +19,3 @@ def record_audio(filename="recorded_audio.wav", duration=10):
             f.write(audio.get_wav_data())
         
         print(f"Audio saved as {filename}")
-
-# Record audio and save it to "recorded_audio.wav" for 10 seconds
-record_audio("recorded_audio.wav")

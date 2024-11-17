@@ -2,8 +2,8 @@ import os
 from pydub import AudioSegment
 
 # Directory containing MP3 files
-mp3_dir = r"ML-Fiesta-Sandalwood/Dataset"
-wav_dir = r"ML-Fiesta-Sandalwood/Dataset-wav"
+mp3_dir = r"../Dataset"
+wav_dir = r"../Dataset-wav"
 
 # Ensure the WAV directory exists
 os.makedirs(wav_dir, exist_ok=True)
