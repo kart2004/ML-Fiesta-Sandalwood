@@ -1,5 +1,8 @@
-from flask import Flask, render_template, request, redirect, url_for
 import os
+import subprocess
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
+from flask import Flask, render_template, request
 from audiorecord import record_audio
 from transcribe_question import transcribe_audio
 
@@ -15,6 +18,15 @@ def record():
     filename = "recorded_audio.wav"
     record_audio(filename, duration)
     transcription = transcribe_audio(filename)
+    
+    # Save the transcription to a file
+    transcription_file = "recorded_audio.txt"
+    with open(transcription_file, 'w', encoding='utf-8') as f:
+        f.write(transcription)
+    
+    # Run the updated_search_segment.py script
+    subprocess.run(["python", "updated_search_segment.py"])
+    
     return render_template('index.html', transcription=transcription)
 
 if __name__ == "__main__":

@@ -5,7 +5,8 @@ import faiss
 import numpy as np
 
 # Path to the folder containing transcripts
-transcripts_folder = 'transcripts3'
+transcripts_folder = r"C:\Users\karth\Desktop\Hack\ML-Fiesta-Sandalwood\Transcripts_all\Transcripts_selected"
+
 def load_question_from_file(question_file):
     with open(question_file, 'r', encoding='utf-8') as file:
         return file.read().strip()  # Read the question and remove extra spaces/newlines
@@ -73,7 +74,7 @@ def get_answer_from_transcripts(question):
     query_vector = np.array(question_embedding).astype(np.float32).reshape(1, -1)
     
     # Perform search for the top 3 most relevant segments
-    k = 1
+    k = 3
     distances, indices = index.search(query_vector, k)
     
     # Return the top 3 closest transcript segments
@@ -83,22 +84,17 @@ def get_answer_from_transcripts(question):
     
     return answers
 
-# Example usage
 # Function to save answers to a text file
 def save_answers_to_file(answers, output_file):
     with open(output_file, 'w', encoding='utf-8') as file:
         for answer in answers:
             file.write(answer + '\n\n')  # Separate answers with a blank line
 
-# Example usage
-question_file = "recorded_audio.txt"
-question = load_question_from_file(question_file)
-# Kannada question
-answers = get_answer_from_transcripts(question)
-
-# Save the answers to a text file
-output_file = "answers/ans.txt"
-save_answers_to_file(answers, output_file)
-
-print(f"Answers saved to {output_file}")
-
+# Main execution
+if __name__ == "__main__":
+    question_file = "recorded_audio.txt"
+    question = load_question_from_file(question_file)
+    answers = get_answer_from_transcripts(question)
+    output_file = "answers/ans.txt"
+    save_answers_to_file(answers, output_file)
+    print(f"Answers saved to {output_file}")

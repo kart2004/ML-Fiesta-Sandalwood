@@ -4,19 +4,46 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kannada Audio Recorder</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Kannada:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <!-- CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-    <h1>Kannada Audio Recorder</h1>
-    <form action="{{ url_for('record') }}" method="post">
-        <label for="duration">Duration (seconds):</label>
-        <input type="number" id="duration" name="duration" value="10" min="1" max="60">
-        <button type="submit">Record</button>
-    </form>
-    {% if transcription %}
-    <h2>Transcription:</h2>
-    <pre>{{ transcription }}</pre>
-    {% endif %}
+    <div class="overlay"></div>
+    <div class="container">
+        <!-- English Heading -->
+        <h1 class="english-heading">Kannada Audio Recorder</h1>
+        <!-- Kannada Heading -->
+        <h1 class="kannada-heading">ಕನ್ನಡ ಧ್ವನಿ ರೆಕಾರ್ಡರ್</h1>
+        <form action="{{ url_for('record') }}" method="post">
+            <label for="duration">ಅವಧಿ (ಸೆಕೆಂಡು):</label>
+            <input type="number" id="duration" name="duration" value="10" min="1" max="60">
+            <button type="submit">ರೆಕಾರ್ಡ್ ಮಾಡಿ</button>
+        </form>
+        {% if transcription %}
+        <div class="transcription-container">
+            <!-- English Subheading -->
+            <h2 class="english-subheading">Transcription:</h2>
+            <!-- Kannada Subheading -->
+            <h2 class="kannada-subheading">ಪ್ರತಿಬೋಧ:</h2>
+            <pre>{{ transcription }}</pre>
+        </div>
+        {% endif %}
+        {% if answers %}
+        <div class="answers-container">
+            <!-- English Subheading -->
+            <h2 class="english-subheading">Answers:</h2>
+            <!-- Kannada Subheading -->
+            <h2 class="kannada-subheading">ಉತ್ತರಗಳು:</h2>
+            <pre>
+                {% for answer in answers %}
+                    {{ answer }}
+                {% endfor %}
+            </pre>
+        </div>
+        {% endif %}
+    </div>
     <script src="{{ url_for('static', filename='scripts.js') }}"></script>
 </body>
 </html>
