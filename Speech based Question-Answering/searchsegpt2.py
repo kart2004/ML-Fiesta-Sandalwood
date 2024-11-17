@@ -8,6 +8,39 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 load_dotenv()  
+def split_content_into_chunks(content, lines_per_chunk):
+    """
+    Split the content into chunks of specified number of lines.
+    """
+    lines = content.splitlines()
+    chunks = [lines[i:i + lines_per_chunk] for i in range(0, len(lines), lines_per_chunk)]
+    return ["\n".join(chunk) for chunk in chunks]
+def ask_groq_api_chunked(file_contents_chunks, query, api_key):
+    """
+    Send each chunk of file contents to the Groq API separately and collect the answers.
+    """
+    answers = []
+    for chunk in file_contents_chunks:
+        # Construct the prompt for the Groq API with each chunk
+        prompt = f"search for the exact answer and return the sentence from the summary with the timestamp. like for example, [0s] sentence. Don't change anything, just return the exact sentence\n\n" \
+                 f"file contents:\n{chunk}\n\n" \
+                 f"query:\n{query}\n\n" \
+                 f"return the answer in kannada only"
+
+        # Send the prompt to the Groq API
+        chat_completion = Groq(api_key=api_key).chat.completions.create(
+            messages=[{
+                "role": "user",
+                "content": prompt,
+            }],
+            model="llama3-8b-8192",
+        )
+
+        # Collect the response
+        answers.append(chat_completion.choices[0].message.content)
+    
+    # Join all answers into a single string and return
+    return "\n".join(answers)
 
 # Step 2: Read the contents of the file (document content)
 def load_file_contents(file_path):
@@ -18,7 +51,6 @@ def load_file_contents(file_path):
 def load_query_from_file(query_file_path):
     with open(query_file_path, 'r', encoding='utf-8') as file:
         return file.read().strip()  # Read the query and remove extra spaces/newlines
-
 def find_best_matching_transcript(answer_file, transcripts_dir):
     # Load the contents of the answers file
     answer_content = load_file_contents(answer_file)
@@ -47,7 +79,7 @@ def get_timestamp_from_file(file_path):
     # Define the regex pattern to match timestamps (e.g., [30s] or [450ms])
     pattern = r'\[(\d+)(ms|s)\]'
     
-    with open(file_path, 'r', encoding='utf-8') as file:
+    with open(file_path, 'r') as file:
         content = file.read()
     
     # Search for the first occurrence of the pattern
@@ -65,35 +97,27 @@ def ask_groq_api(file_contents, query, api_key):
     # Set up Groq API client
     client = Groq(api_key=api_key)
     
-    # Split the document into chunks to fit within the context length limit
-    max_length = 2048  # Adjust this value based on the model's context length limit
-    chunks = [file_contents[i:i + max_length] for i in range(0, len(file_contents), max_length)]
-    
-    # Initialize an empty string to store the combined answers
-    combined_answer = ""
-    
-    for chunk in chunks:
-        # Construct the prompt
-        prompt = f"search for the exact answer and return the sentence from the summary with the timestamp. like for example, [0s] sentence. Don't change anything, just return the exact sentence\n\n" \
-             f"file contents:\n{chunk}\n\n" \
-             f"query:\n{query}\n\n" \
-             f"return the answer in kannada only"
+    # Construct the prompt
+    prompt = f"search for the exact answer and return the sentence from the summary with the timestamp. like for example, [0s] sentence. Don't change anything, just return the exact sentence\n\n" \
+         f"file contents:\n{file_contents}\n\n" \
+         f"query:\n{query}\n\n" \
+         f"return the answer in kannada only"
 
-        # Prepare the context with the constructed prompt
-        chat_completion = client.chat.completions.create(
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt,  # The full prompt containing both the document and query in Kannada
-                }
-            ],
-            model="llama3-8b-8192",  # Replace with the model you want to use
-        )
-        
-        # Extract and append the response content (in Kannada)
-        combined_answer += chat_completion.choices[0].message.content + "\n"
+
+
+    # Prepare the context with the constructed prompt
+    chat_completion = client.chat.completions.create(
+        messages=[
+            {
+                "role": "user",
+                "content": prompt,  # The full prompt containing both the document and query in Kannada
+            }
+        ],
+        model="llama3-8b-8192",  # Replace with the model you want to use
+    )
     
-    return combined_answer.strip()
+    # Extract and return the response content (in Kannada)
+    return chat_completion.choices[0].message.content
 
 def get_audio_segment(transcript_file, start_time, segment_duration, audio_dir):
     audio_file = os.path.splitext(transcript_file)[0] + ".wav"
@@ -103,7 +127,6 @@ def get_audio_segment(transcript_file, start_time, segment_duration, audio_dir):
     end_sample = int((start_time + segment_duration) * sampling_rate)
     answer_segment = speech_array[:, start_sample:end_sample]
     return answer_segment, sampling_rate
-
 # Step 5: Save the answer to a file
 def save_answer_to_file(answer, output_file_path):
     with open(output_file_path, 'w', encoding='utf-8') as file:
@@ -114,8 +137,8 @@ def main():
     # File paths
     document_file_path = 'answers/ans.txt'  # Path to your Kannada document file
     query_file_path = 'recorded_audio.txt'  # Path to your Kannada query file
-    output_file_path = 'answers/answerff.txt'  # Path to save the answer in Kannada
-    
+    output_file_path = 'answers/answerfinal.txt'  # Path to save the answer in Kannada
+    output_file_path1 = 'answers/pt1.txt'
     # Get the API key from environment variable
     api_key = os.getenv("GROQ_API_KEY")  # Retrieve the API key from the .env file
 
@@ -125,17 +148,25 @@ def main():
 
     # Step 1: Load the file contents (document in Kannada)
     file_contents = load_file_contents(document_file_path)
-    
+    file_contents_chunks = split_content_into_chunks(file_contents,10)
+
     # Step 2: Load the query from a file (in Kannada)
     query = load_query_from_file(query_file_path)
     
     # Step 3: Ask the Groq API with the document and query (both in Kannada)
-    answer = ask_groq_api(file_contents, query, api_key)
-    
+    #answer = ask_groq_api(file_contents, query, api_key)
+    answer = ask_groq_api_chunked(file_contents_chunks, query, api_key)
+    #newcont = split_content_into_chunks(file_contents,1)
+    #answerr = ask_groq_api_chunked(file_contents_chunks, query, api_key)
     # Step 4: Save the answer to a file (in Kannada)
-    save_answer_to_file(answer, output_file_path)
-    answer_file_path = 'answers/answerff.txt'
-    transcripts_dir = r"C:\Users\karth\Desktop\Hack\ML-Fiesta-Sandalwood\Transcripts_all\Transcripts_selected"
+    
+    save_answer_to_file(answer, output_file_path1)
+    fc2 = load_file_contents(output_file_path1)
+    answerr = ask_groq_api(fc2,query,api_key)
+    save_answer_to_file(answerr,output_file_path)
+
+    answer_file_path = 'answers/ans.txt'
+    transcripts_dir = '/Users/ananyabhat/Documents/repo/py/mlf4/Transcripts_all/Transcripts_selected'
     
     # Find the best matching transcript file
     best_match_file, similarity_score = find_best_matching_transcript(answer_file_path, transcripts_dir)
@@ -144,12 +175,12 @@ def main():
     print(f"Similarity score: {similarity_score}")
     print(f"Answer saved to {output_file_path}")
 
-    path = "answers/answerff.txt"
+    path = "answers/answerfinal.txt"
     start_time = get_timestamp_from_file(path)
     segment_duration = 30  # Adjust as needed
-    audio_dir = r"C:\Users\karth\Desktop\Hack\ML-Fiesta-Sandalwood\Dataset-wav"
+    audio_dir = "/Users/ananyabhat/Documents/repo/py/mlf4/Dataset-wav"
     answer_segment, sampling_rate = get_audio_segment(best_match_file, start_time, segment_duration, audio_dir)
-    answer_audio_path = "static/answers/answer_segment.wav"
+    answer_audio_path = "answers/answer_segment.wav"
     torchaudio.save(answer_audio_path, answer_segment, sampling_rate)
     print(f"Answer audio segment saved as {answer_audio_path}")
 
