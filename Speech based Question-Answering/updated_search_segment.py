@@ -86,6 +86,9 @@ def get_answer_from_transcripts(question):
 
 # Function to save answers to a text file
 def save_answers_to_file(answers, output_file):
+    # Ensure the directory exists
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
+    
     with open(output_file, 'w', encoding='utf-8') as file:
         for answer in answers:
             file.write(answer + '\n\n')  # Separate answers with a blank line

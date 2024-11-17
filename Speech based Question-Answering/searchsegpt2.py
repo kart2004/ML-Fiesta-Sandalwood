@@ -18,6 +18,7 @@ def load_file_contents(file_path):
 def load_query_from_file(query_file_path):
     with open(query_file_path, 'r', encoding='utf-8') as file:
         return file.read().strip()  # Read the query and remove extra spaces/newlines
+
 def find_best_matching_transcript(answer_file, transcripts_dir):
     # Load the contents of the answers file
     answer_content = load_file_contents(answer_file)
@@ -46,7 +47,7 @@ def get_timestamp_from_file(file_path):
     # Define the regex pattern to match timestamps (e.g., [30s] or [450ms])
     pattern = r'\[(\d+)(ms|s)\]'
     
-    with open(file_path, 'r') as file:
+    with open(file_path, 'r', encoding='utf-8') as file:
         content = file.read()
     
     # Search for the first occurrence of the pattern
@@ -64,27 +65,35 @@ def ask_groq_api(file_contents, query, api_key):
     # Set up Groq API client
     client = Groq(api_key=api_key)
     
-    # Construct the prompt
-    prompt = f"search for the exact answer and return the sentence from the summary with the timestamp. like for example, [0s] sentence. Don't change anything, just return the exact sentence\n\n" \
-         f"file contents:\n{file_contents}\n\n" \
-         f"query:\n{query}\n\n" \
-         f"return the answer in kannada only"
-
-
-
-    # Prepare the context with the constructed prompt
-    chat_completion = client.chat.completions.create(
-        messages=[
-            {
-                "role": "user",
-                "content": prompt,  # The full prompt containing both the document and query in Kannada
-            }
-        ],
-        model="llama3-8b-8192",  # Replace with the model you want to use
-    )
+    # Split the document into chunks to fit within the context length limit
+    max_length = 2048  # Adjust this value based on the model's context length limit
+    chunks = [file_contents[i:i + max_length] for i in range(0, len(file_contents), max_length)]
     
-    # Extract and return the response content (in Kannada)
-    return chat_completion.choices[0].message.content
+    # Initialize an empty string to store the combined answers
+    combined_answer = ""
+    
+    for chunk in chunks:
+        # Construct the prompt
+        prompt = f"search for the exact answer and return the sentence from the summary with the timestamp. like for example, [0s] sentence. Don't change anything, just return the exact sentence\n\n" \
+             f"file contents:\n{chunk}\n\n" \
+             f"query:\n{query}\n\n" \
+             f"return the answer in kannada only"
+
+        # Prepare the context with the constructed prompt
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt,  # The full prompt containing both the document and query in Kannada
+                }
+            ],
+            model="llama3-8b-8192",  # Replace with the model you want to use
+        )
+        
+        # Extract and append the response content (in Kannada)
+        combined_answer += chat_completion.choices[0].message.content + "\n"
+    
+    return combined_answer.strip()
 
 def get_audio_segment(transcript_file, start_time, segment_duration, audio_dir):
     audio_file = os.path.splitext(transcript_file)[0] + ".wav"
@@ -94,6 +103,7 @@ def get_audio_segment(transcript_file, start_time, segment_duration, audio_dir):
     end_sample = int((start_time + segment_duration) * sampling_rate)
     answer_segment = speech_array[:, start_sample:end_sample]
     return answer_segment, sampling_rate
+
 # Step 5: Save the answer to a file
 def save_answer_to_file(answer, output_file_path):
     with open(output_file_path, 'w', encoding='utf-8') as file:
@@ -103,7 +113,7 @@ def save_answer_to_file(answer, output_file_path):
 def main():
     # File paths
     document_file_path = 'answers/ans.txt'  # Path to your Kannada document file
-    query_file_path = 'newtranscripts/recorded_audio.txt'  # Path to your Kannada query file
+    query_file_path = 'recorded_audio.txt'  # Path to your Kannada query file
     output_file_path = 'answers/answerff.txt'  # Path to save the answer in Kannada
     
     # Get the API key from environment variable
@@ -124,8 +134,8 @@ def main():
     
     # Step 4: Save the answer to a file (in Kannada)
     save_answer_to_file(answer, output_file_path)
-    answer_file_path = 'answers/ans.txt'
-    transcripts_dir = 'transcripts3'
+    answer_file_path = 'answers/answerff.txt'
+    transcripts_dir = r"C:\Users\karth\Desktop\Hack\ML-Fiesta-Sandalwood\Transcripts_all\Transcripts_selected"
     
     # Find the best matching transcript file
     best_match_file, similarity_score = find_best_matching_transcript(answer_file_path, transcripts_dir)
@@ -134,12 +144,12 @@ def main():
     print(f"Similarity score: {similarity_score}")
     print(f"Answer saved to {output_file_path}")
 
-    path = "answers/answerfinal.txt"
+    path = "answers/answerff.txt"
     start_time = get_timestamp_from_file(path)
     segment_duration = 30  # Adjust as needed
-    audio_dir = "Dataset-wav"
+    audio_dir = r"C:\Users\karth\Desktop\Hack\ML-Fiesta-Sandalwood\Dataset-wav"
     answer_segment, sampling_rate = get_audio_segment(best_match_file, start_time, segment_duration, audio_dir)
-    answer_audio_path = "answers/answer_segment.wav"
+    answer_audio_path = "static/answers/answer_segment.wav"
     torchaudio.save(answer_audio_path, answer_segment, sampling_rate)
     print(f"Answer audio segment saved as {answer_audio_path}")
 

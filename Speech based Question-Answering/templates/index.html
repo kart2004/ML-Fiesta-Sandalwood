@@ -3,47 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kannada Audio Recorder</title>
+    <title>Sandalwood Speech based Question-Answering | ಕನ್ನಡ ಧ್ವನಿ ಆಧಾರಿತ ಪ್ರಶ್ನೋತ್ತರ</title>
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Kannada:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    <!-- CSS -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Noto+Sans+Kannada:wght@700&family=Roboto:wght@700&display=swap" rel="stylesheet">
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-    <div class="overlay"></div>
     <div class="container">
         <!-- English Heading -->
-        <h1 class="english-heading">Kannada Audio Recorder</h1>
+        <h1 class="english-heading">Sandalwood Speech based Question-Answering</h1>
         <!-- Kannada Heading -->
-        <h1 class="kannada-heading">ಕನ್ನಡ ಧ್ವನಿ ರೆಕಾರ್ಡರ್</h1>
-        <form action="{{ url_for('record') }}" method="post">
-            <label for="duration">ಅವಧಿ (ಸೆಕೆಂಡು):</label>
-            <input type="number" id="duration" name="duration" value="10" min="1" max="60">
-            <button type="submit">ರೆಕಾರ್ಡ್ ಮಾಡಿ</button>
+        <h1 class="kannada-heading">ಕನ್ನಡ ಧ್ವನಿ ಆಧಾರಿತ ಪ್ರಶ್ನೋತ್ತರ</h1>
+        <form id="recordForm" action="{{ url_for('record') }}" method="post" class="form-inline justify-content-center">
+            <label for="duration" class="mr-2 english-label">Duration (seconds):</label>
+            <label for="duration" class="mr-2 kannada-label">ಅವಧಿ (ಸೆಕೆಂಡು):</label>
+            <input type="number" id="duration" name="duration" value="10" min="1" max="60" class="form-control mr-2">
+            <button type="submit" class="btn btn-danger">Record | ರೆಕಾರ್ಡ್ ಮಾಡಿ</button>
         </form>
         {% if transcription %}
-        <div class="transcription-container">
+        <div id="transcriptionContainer" class="transcription-container mt-4">
             <!-- English Subheading -->
             <h2 class="english-subheading">Transcription:</h2>
             <!-- Kannada Subheading -->
             <h2 class="kannada-subheading">ಪ್ರತಿಬೋಧ:</h2>
-            <pre>{{ transcription }}</pre>
+            <pre id="transcriptionText">{{ transcription }}</pre>
         </div>
         {% endif %}
-        {% if answers %}
-        <div class="answers-container">
+        <div id="answerContainer" class="answer-container mt-4" style="display: none;">
             <!-- English Subheading -->
-            <h2 class="english-subheading">Answers:</h2>
+            <h2 class="english-subheading">Answer Segment:</h2>
             <!-- Kannada Subheading -->
-            <h2 class="kannada-subheading">ಉತ್ತರಗಳು:</h2>
-            <pre>
-                {% for answer in answers %}
-                    {{ answer }}
-                {% endfor %}
-            </pre>
+            <h2 class="kannada-subheading">ಉತ್ತರ ವಿಭಾಗ:</h2>
+            <audio id="answerAudio" controls>
+                <source src="{{ url_for('static', filename='answers/answer_segment.wav') }}" type="audio/wav">
+                Your browser does not support the audio element.
+            </audio>
         </div>
-        {% endif %}
     </div>
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <!-- Custom JS -->
     <script src="{{ url_for('static', filename='scripts.js') }}"></script>
 </body>
 </html>

@@ -2,7 +2,7 @@ import os
 import subprocess
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 from audiorecord import record_audio
 from transcribe_question import transcribe_audio
 
@@ -24,8 +24,13 @@ def record():
     with open(transcription_file, 'w', encoding='utf-8') as f:
         f.write(transcription)
     
+    # Print the transcription before running the subprocess
+    print(f"Transcription: {transcription}")
+    
     # Run the updated_search_segment.py script
     subprocess.run(["python", "updated_search_segment.py"])
+    # Run the searchsegpt2.py script
+    subprocess.run(["python", "searchsegpt2.py"])
     
     return render_template('index.html', transcription=transcription)
 
